@@ -182,6 +182,7 @@ module.exports = grammar({
 
     expression: ($) =>
       prec.right(choice(
+        $.assignment_expression,
         $._unaryExpression,
         $.subscript_expression,
         $.runtime_type_check_expression,
@@ -197,6 +198,13 @@ module.exports = grammar({
         seq('untyped', $._rhs_expression),
         'break',
         'continue',
+      )),
+
+    assignment_expression: ($) =>
+      prec.right(seq(
+        field('left', $._lhs_expression),
+        field('operator', $._assignmentOperator),
+        field('right', $.expression),
       )),
 
     subscript_expression: ($) =>

@@ -32,6 +32,13 @@
 ; -----------
 ; (call_expression name: (identifier) @variable.parameter)
 
+; Assignment expressions
+(assignment_expression
+  left: (_) @variable
+  operator: (_) @operator
+  right: (_)
+)
+
 ; TODO: Figure out how to determined when "nested member call" is last ident.
 ; apparently this is a known issue https://github.com/tree-sitter/tree-sitter/issues/880
 (call_expression object: [
