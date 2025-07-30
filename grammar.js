@@ -1,197 +1,286 @@
-// grammar.js - Minimal Haxe Grammar to Start
+const operators = require('./grammar/operators');
+const literals = require('./grammar/literals');
+const declarations = require('./grammar/declarations');
+const builtins = require('./grammar/builtins');
+
+const { commaSep, commaSep1 } = require('./grammar/utils');
+
+const preprocessor_statement_start_tokens = ['if', 'elseif'];
+const preprocessor_statement_end_tokens = ['else', 'end'];
+
 module.exports = grammar({
   name: 'haxe',
-
-  extras: $ => [
-    /\s/,           // Whitespace
-    $.comment,      // Comments
+  externals: ($) => [$._lookback_semicolon, $._closing_brace_marker, $._closing_brace_unmarker],
+  word: ($) => $.identifier,
+  extras: ($) => [$.comment, /[\s\uFEFF\u2060\u200B\u00A0]/, $._closing_brace_unmarker],
+  inline: ($) => [$.statement, $.expression],
+  supertypes: ($) => [$.declaration],
+  conflicts: ($) => [
+    [$.block, $.object],
+    [$.typedef_declaration, $.type],
+    [$._rhs_expression, $.pair],
+    [$._literal, $.pair],
+    [$.pair, $.pair],
+    [$.function_declaration],
+    [$.function_type, $.variable_declaration],
+    [$.type, $.function_type, $.variable_declaration],
+    [$.type, $._function_type_args],
+    [$.structure_type_pair, $._function_type_args],
+    [$.function_declaration, $.variable_declaration],
+    [$._prefixUnaryOperator, $._arithmeticOperator],
+    [$._prefixUnaryOperator, $._postfixUnaryOperator],
   ],
-
   rules: {
-    // Entry point - a Haxe source file
-    source_file: $ => repeat($._top_level_item),
+    module: ($) => seq(repeat($.statement)),
+    statement: ($) =>
+      // Use prec.left to favor rules that end SOONER
+      // this means a semicolon ends the statement.
+      prec.left(
+        choice(
+          $.preprocessor_statement,
+          $.import_statement,
+          $.using_statement,
+          $.package_statement,
+          $.declaration,
+          $.switch_expression,
+          seq($.expression, $._lookback_semicolon),
+          $.conditional_statement,
+          $.throw_statement,
+          $.block,
+        ),
+      ),
 
-    _top_level_item: $ => choice(
-      $.class_declaration,
-      $.import_statement,
-      $.package_statement,
-      $.comment,
-    ),
+    preprocessor_statement: ($) =>
+      prec.right(
+        seq(
+          '#',
+          choice(
+            seq(token.immediate(choice(...preprocessor_statement_start_tokens)), $.expression),
+            token.immediate(choice(...preprocessor_statement_end_tokens)),
+          ),
+        ),
+      ),
 
-    // Package declaration
-    package_statement: $ => seq(
-      'package',
-      optional($.package_path),
-      ';'
-    ),
+    package_statement: ($) =>
+      seq(
+        'package',
+        optional(field('name', seq(repeat(seq($.package_name, '.')), $.package_name))),
+        $._semicolon,
+      ),
 
-    package_path: $ => sep1($.identifier, '.'),
+    package_name: ($) => $._camelCaseIdentifier,
+    type_name: ($) => $._pascalCaseIdentifier,
+    _type_path: ($) => seq(repeat(seq($.package_name, '.')), repeat(seq($.type_name, '.')), $.type_name),
 
-    // Import statement
-    import_statement: $ => seq(
-      'import',
-      $.import_path,
-      ';'
-    ),
+    import_statement: ($) =>
+      seq(
+        'import',
+        seq(
+          repeat(seq($.package_name, '.')),
+          repeat(seq($.type_name, '.')),
+          choice(
+            '*',
+            seq($.type_name, optional(seq('.', alias($._camelCaseIdentifier, $.identifier)))),
+          )
+        ),
+        optional(seq(choice('as', 'in'), choice($.type_name, alias($._camelCaseIdentifier, $.identifier)))),
+        $._semicolon,
+      ),
 
-    import_path: $ => sep1(choice($.identifier, '*'), '.'),
+    using_statement: ($) =>
+      seq(
+        'using',
+        seq(repeat(seq($.package_name, '.')), repeat(seq($.type_name, '.')), $.type_name),
+        $._semicolon,
+      ),
 
-    // Basic class declaration
-    class_declaration: $ => seq(
-      repeat($.access_modifier),
-      'class',
-      field('name', $.identifier),
-      optional($.class_body)
-    ),
+    throw_statement: ($) => prec.right(seq('throw', $.expression, $._lookback_semicolon)),
 
-    access_modifier: $ => choice(
-      'public',
-      'private',
-      'static',
-      'inline'
-    ),
+    _rhs_expression: ($) =>
+      prec.right(choice($._literal, $.identifier, $.member_expression, $.call_expression)),
 
-    class_body: $ => seq(
-      '{',
-      repeat($._class_member),
-      '}'
-    ),
+    _unaryExpression: ($) =>
+      prec.left(
+        1,
+        choice(
+          // unary on LHS
+          seq($.operator, $._rhs_expression),
+          // unary on RHS
+          seq($._rhs_expression, $.operator),
+        ),
+      ),
 
-    _class_member: $ => choice(
-      $.field_declaration,
-      $.method_declaration,
-      $.comment,
-    ),
+    runtime_type_check_expression: ($) =>
+      prec(20, seq('(', alias($.structure_type_pair, 'type_check'), ')')),
+    //     runtime_type_check_expression: ($) => prec.left(10, seq('(', $.pair, ')')),
 
-    // Field declaration
-    field_declaration: $ => seq(
-      repeat($.access_modifier),
-      'var',
-      $.identifier,
-      optional($.type_annotation),
-      optional(seq('=', $.expression)),
-      ';'
-    ),
+    switch_expression: ($) =>
+      prec.right(
+        seq(
+          'switch',
+          choice($.identifier, $._parenthesized_expression),
+          alias($.switch_block, $.block),
+        ),
+      ),
 
-    // Method declaration
-    method_declaration: $ => seq(
-      repeat($.access_modifier),
-      'function',
-      field('name', $.identifier),
-      $.parameter_list,
-      optional($.type_annotation),
-      choice($.block, ';')
-    ),
+    _closing_brace: ($) => seq($._closing_brace_marker, '}'),
 
-    parameter_list: $ => seq(
-      '(',
-      optional(sep1($.parameter, ',')),
-      ')'
-    ),
+    switch_block: ($) => seq('{', repeat($.case_statement), $._closing_brace),
 
-    parameter: $ => seq(
-      $.identifier,
-      optional($.type_annotation)
-    ),
+    case_statement: ($) =>
+      prec.right(
+        choice(
+          seq('case', choice($._rhs_expression, alias('_', $._rhs_expression)), ':', $.statement),
+          seq('default', ':', $.statement),
+        ),
+      ),
 
-    type_annotation: $ => seq(':', $.type),
+    cast_expression: ($) =>
+      choice(
+        seq('cast', $._rhs_expression),
+        seq('cast', '(', $._rhs_expression, optional(seq(',', field('type', $.type))), ')'),
+      ),
 
-    type: $ => choice(
-      $.identifier,
-      $.generic_type
-    ),
+    type_trace_expression: ($) => seq('$type', '(', $._rhs_expression, ')'),
 
-    generic_type: $ => seq(
-      $.identifier,
-      '<',
-      sep1($.type, ','),
-      '>'
-    ),
+    _parenthesized_expression: ($) => seq('(', repeat1(prec.left($.expression)), ')'),
 
-    // Basic expressions
-    expression: $ => choice(
-      $.identifier,
-      $.number,
-      $.string,
-      $.boolean,
-      $.null_literal,
-      $.parenthesized_expression,
-      $.call_expression,
-    ),
+    range_expression: ($) =>
+      prec(
+        1,
+        seq($.identifier, 'in', choice(seq($.integer, $._rangeOperator, $.integer), $.identifier)),
+      ),
 
-    call_expression: $ => seq(
-      $.expression,
-      $.argument_list
-    ),
+    expression: ($) =>
+      choice(
+        $._unaryExpression,
+        $.subscript_expression,
+        $.runtime_type_check_expression,
+        $.cast_expression,
+        $.type_trace_expression,
+        $.range_expression,
+        $._parenthesized_expression,
+        $.switch_expression,
+        // simple expression, or chained.
+        seq($._rhs_expression, repeat(seq($.operator, $._rhs_expression))),
+        seq('return', optional($._rhs_expression)),
+        seq('untyped', $._rhs_expression),
+        'break',
+        'continue',
+      ),
 
-    argument_list: $ => seq(
-      '(',
-      optional(sep1($.expression, ',')),
-      ')'
-    ),
+    subscript_expression: ($) =>
+      prec.left(
+        1,
+        seq(
+          choice($.identifier, $._parenthesized_expression, $.member_expression),
+          '[',
+          field('index', $.expression),
+          ']',
+        ),
+        //           seq($._parenthesized_expression, '[', field('index', $.expression), ']'),
+      ),
 
-    parenthesized_expression: $ => seq(
-      '(',
-      $.expression,
-      ')'
-    ),
+    member_expression: ($) =>
+      prec.right(
+        seq(
+          choice(field('object', choice('this', $.identifier)), field('literal', $._literal)),
+          choice(token('.'), seq(alias('?', $.operator), '.')),
+          repeat1(field('member', $._lhs_expression)),
+        ),
+      ),
 
-    // Statements
-    block: $ => seq(
-      '{',
-      repeat($.statement),
-      '}'
-    ),
+    _lhs_expression: ($) => prec(1, choice($.identifier, $.member_expression)),
 
-    statement: $ => choice(
-      $.expression_statement,
-      $.return_statement,
-      $.if_statement,
-      $.block,
-    ),
+    builtin_type: ($) => prec.right(choice(...builtins)),
 
-    expression_statement: $ => seq(
-      $.expression,
-      ';'
-    ),
+    _function_type_args: ($) => commaSep1(seq(optional(seq($.identifier, ':')), $.type)),
 
-    return_statement: $ => seq(
-      'return',
-      optional($.expression),
-      ';'
-    ),
+    function_type: ($) =>
+      prec.right(
+        choice(
+          seq('(', ')', '->', $.type),
+          seq($.type, '->', field('return_type', $.type)),
+          seq('(', $._function_type_args, ')', '->', $.type),
+        ),
+      ),
 
-    if_statement: $ => prec.right(seq(
-      'if',
-      '(',
-      $.expression,
-      ')',
-      $.statement,
-      optional(seq('else', $.statement))
-    )),
+    type: ($) =>
+      prec.right(
+        choice(
+          seq(
+            choice(
+              field('type_name', $._lhs_expression),
+              field('built_in', alias($.builtin_type, $.identifier)),
+            ),
+            optional($.type_params),
+          ),
+          $.function_type,
+          seq('(', alias($.type, 'type'), ')'),
+        ),
+      ),
 
-    // Literals
-    identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
-    
-    number: $ => choice(
-      /\d+/,                    // Integer
-      /\d+\.\d+/,              // Float
-      /0x[0-9a-fA-F]+/         // Hex
-    ),
+    block: ($) => seq('{', repeat($.statement), $._closing_brace),
 
-    string: $ => choice(
-      seq('"', repeat(/[^"\\]|\\./, ), '"'),
-      seq("'", repeat(/[^'\\]|\\./, ), "'")
-    ),
+    metadata: ($) =>
+      seq(
+        choice(token('@'), token('@:')),
+        field('name', $._lhs_expression),
+        optional(seq('(', $.expression, ')')),
+      ),
 
-    boolean: $ => choice('true', 'false'),
-    null_literal: $ => 'null',
+    // arg list is () with any amount of expressions followed by commas
+    _arg_list: ($) => seq('(', commaSep($.expression), ')'),
 
-    // Comments
-    comment: $ => choice(
-      seq('//', /.*/),                           // Line comment
-      seq('/*', repeat(/[^*]|\*[^/]/), '*/')    // Block comment
-    ),
+    conditional_statement: ($) =>
+      prec.right(
+        1,
+        seq(
+          field('name', 'if'),
+          field('arguments_list', $._arg_list),
+          optional($.block),
+          optional(seq(choice('else', 'else if'), $.block)),
+        ),
+      ),
+
+    _call: ($) =>
+      prec(
+        1,
+        seq(
+          field('object', $._lhs_expression),
+          optional($.type_params),
+          field('arguments_list', $._arg_list),
+        ),
+      ),
+
+    _constructor_call: ($) =>
+      seq(
+        'new',
+        seq(
+          repeat(seq($.package_name, '.')),
+          repeat(seq($.type_name, '.')),
+          field('constructor', $.type_name),
+          optional($.type_params),
+          field('arguments_list', $._arg_list),
+        ),
+      ),
+
+    call_expression: ($) => choice($._call, $._constructor_call),
+
+    ...operators,
+    ...declarations,
+    ...literals,
+
+    comment: ($) => token(choice(seq('//', /.*/), seq('/*', /[^*]*\*+([^/*][^*]*\*+)*/, '/'))),
+    // TODO: implement the structures that use these
+    keyword: ($) => choice('catch', 'do', 'enum', 'for', 'try', 'while'),
+    // keywords reserved by the haxe compiler that are not currently used
+    reserved_keyword: ($) => choice('operator'),
+    identifier: ($) => /[a-zA-Z_]+[a-zA-Z0-9]*/,
+    // Hidden Nodes in tree.
+    _camelCaseIdentifier: ($) => /[a-z_]+[a-zA-Z0-9]*/,
+    _pascalCaseIdentifier: ($) => /[A-Z]+[a-zA-Z0-9]*/,
+    _semicolon: ($) => $._lookback_semicolon,
   }
 });
 
