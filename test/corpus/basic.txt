@@ -1,0 +1,126 @@
+# test/corpus/basic.txt - TreeSitter Test Cases
+
+================================================================================
+Basic class declaration
+================================================================================
+
+class Test {
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (class_declaration
+    name: (identifier)))
+
+================================================================================
+Class with package
+================================================================================
+
+package com.example;
+
+class HelloWorld {
+    public function new() {
+    }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (package_statement
+    (package_path
+      (identifier)
+      (identifier)))
+  (class_declaration
+    name: (identifier)
+    (class_body
+      (method_declaration
+        (access_modifier)
+        name: (identifier)
+        (parameter_list)
+        (block)))))
+
+================================================================================
+Import statement
+================================================================================
+
+import haxe.Json;
+
+class Test {
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (import_statement
+    (import_path
+      (identifier)
+      (identifier)))
+  (class_declaration
+    name: (identifier)))
+
+================================================================================
+Field and method
+================================================================================
+
+class Player {
+    public var health:Int;
+    
+    public function takeDamage(amount:Int):Void {
+        health -= amount;
+    }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (class_declaration
+    name: (identifier)
+    (class_body
+      (field_declaration
+        (access_modifier)
+        (identifier)
+        (type_annotation
+          (type
+            (identifier))))
+      (method_declaration
+        (access_modifier)
+        name: (identifier)
+        (parameter_list
+          (parameter
+            (identifier)
+            (type_annotation
+              (type
+                (identifier)))))
+        (type_annotation
+          (type
+            (identifier)))
+        (block
+          (statement
+            (expression_statement
+              (expression
+                (identifier)))))))))
+
+================================================================================
+Comments
+================================================================================
+
+// Single line comment
+class Test {
+    /* Block comment */
+    var x:Int;
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment)
+  (class_declaration
+    name: (identifier)
+    (class_body
+      (comment)
+      (field_declaration
+        (identifier)
+        (type_annotation
+          (type
+            (identifier)))))))
