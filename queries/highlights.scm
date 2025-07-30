@@ -58,6 +58,10 @@
 (arrow_function "->" @operator.arrow)
 (arrow_function_parameter name: (identifier) @variable.parameter)
 (arrow_function_parameter type: (type) @type)
+
+; Macro reification
+(macro_reification) @keyword.other.reification
+(macro_reification "$" @punctuation.definition.reification)
 (package_name) @module
 (type (identifier) !built_in) @type
 (type built_in: (identifier)) @type.builtin

@@ -2670,14 +2670,6 @@
         "type": "SEQ",
         "members": [
           {
-            "type": "FIELD",
-            "name": "name",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_lhs_expression"
-            }
-          },
-          {
             "type": "CHOICE",
             "members": [
               {
@@ -2688,6 +2680,14 @@
                 "type": "BLANK"
               }
             ]
+          },
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_lhs_expression"
+            }
           },
           {
             "type": "CHOICE",
@@ -2926,6 +2926,10 @@
         {
           "type": "SYMBOL",
           "name": "pair"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "macro_reification"
         }
       ]
     },
@@ -3542,6 +3546,74 @@
           }
         ]
       }
+    },
+    "macro_reification": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "$"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "e"
+                },
+                {
+                  "type": "STRING",
+                  "value": "i"
+                },
+                {
+                  "type": "STRING",
+                  "value": "v"
+                },
+                {
+                  "type": "STRING",
+                  "value": "a"
+                },
+                {
+                  "type": "STRING",
+                  "value": "b"
+                },
+                {
+                  "type": "STRING",
+                  "value": "p"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "{"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "expression"
+            },
+            {
+              "type": "STRING",
+              "value": "}"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "$"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          ]
+        }
+      ]
     },
     "comment": {
       "type": "TOKEN",

@@ -4,7 +4,7 @@ const { commaSep, commaSep1 } = require('./utils');
 module.exports = {
   // Main "literal" export.
   _literal: ($) =>
-    choice($.integer, $.float, $.string, $.bool, $.null, $.regex, $.array, $.map, $.object, $.pair),
+    choice($.integer, $.float, $.string, $.bool, $.null, $.regex, $.array, $.map, $.object, $.pair, $.macro_reification),
 
   // Match any [42, 0xFF43]
   integer: ($) => choice(/[\d_]+/, /0x[a-fA-F\d_]+/),
@@ -79,5 +79,12 @@ module.exports = {
         choice(/[^xu0-7]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{2}/, /u[0-9a-fA-F]{4}/),
         //         choice(/[^xu0-7]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{2}/, /u[0-9a-fA-F]{4}/, /u{[0-9a-fA-F]+}/),
       ),
+    ),
+
+  // Macro reification patterns: $e{expr}, $i{ident}, $v{value}, etc.
+  macro_reification: ($) =>
+    choice(
+      seq('$', choice('e', 'i', 'v', 'a', 'b', 'p'), '{', $.expression, '}'),
+      seq('$', $.identifier), // Simple variable reification like $name
     ),
 };
