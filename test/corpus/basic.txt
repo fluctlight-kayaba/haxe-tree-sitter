@@ -11,7 +11,8 @@ class Test {
 
 (source_file
   (class_declaration
-    name: (identifier)))
+    name: (identifier)
+    (class_body)))
 
 ================================================================================
 Class with package
@@ -57,7 +58,8 @@ class Test {
       (identifier)
       (identifier)))
   (class_declaration
-    name: (identifier)))
+    name: (identifier)
+    (class_body)))
 
 ================================================================================
 Field and method

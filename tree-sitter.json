@@ -7,7 +7,7 @@
       "title": "Haxe",
       "scope": "source.haxe",
       "file-types": [
-        "haxe"
+        "hx"
       ],
       "injection-regex": "^haxe$",
       "class-name": "TreeSitterHaxe"
