@@ -29,6 +29,11 @@ module.exports = grammar({
     [$.function_declaration, $.variable_declaration],
     [$._prefixUnaryOperator, $._arithmeticOperator],
     [$._prefixUnaryOperator, $._postfixUnaryOperator],
+    [$._rhs_expression, $.arrow_function_parameter],
+    [$.arrow_function_parameter, $.function_type],
+    [$.arrow_function_parameter, $.structure_type_pair],
+    [$.arrow_function_parameter, $._function_type_args, $.structure_type_pair],
+    [$.arrow_function_parameter, $._function_type_args],
   ],
   rules: {
     module: ($) => seq(repeat($.statement)),
@@ -151,6 +156,27 @@ module.exports = grammar({
         seq($.identifier, 'in', choice(seq($.integer, $._rangeOperator, $.integer), $.identifier)),
       ),
 
+    // Arrow functions: (param:Type) -> expression
+    arrow_function: ($) =>
+      prec.right(
+        choice(
+          // () -> expression
+          seq('(', ')', '->', $.expression),
+          // (params) -> expression  
+          seq('(', commaSep1($.arrow_function_parameter), ')', '->', $.expression),
+          // param -> expression (single param without parens)
+          seq($.arrow_function_parameter, '->', $.expression),
+        ),
+      ),
+
+    arrow_function_parameter: ($) =>
+      seq(
+        optional('?'), // Optional parameter
+        field('name', $.identifier),
+        optional(seq(':', field('type', $.type))),
+        optional(seq('=', field('default', $.expression))),
+      ),
+
     expression: ($) =>
       choice(
         $._unaryExpression,
@@ -161,6 +187,7 @@ module.exports = grammar({
         $.range_expression,
         $._parenthesized_expression,
         $.switch_expression,
+        $.arrow_function,
         // simple expression, or chained.
         seq($._rhs_expression, repeat(seq($.operator, $._rhs_expression))),
         seq('return', optional($._rhs_expression)),

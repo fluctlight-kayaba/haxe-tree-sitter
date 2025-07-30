@@ -4,7 +4,7 @@ const { commaSep, commaSep1 } = require('./utils');
 module.exports = {
   // Main "literal" export.
   _literal: ($) =>
-    choice($.integer, $.float, $.string, $.bool, $.null, $.array, $.map, $.object, $.pair),
+    choice($.integer, $.float, $.string, $.bool, $.null, $.regex, $.array, $.map, $.object, $.pair),
 
   // Match any [42, 0xFF43]
   integer: ($) => choice(/[\d_]+/, /0x[a-fA-F\d_]+/),
@@ -20,6 +20,20 @@ module.exports = {
     ),
   // match only [null]
   null: ($) => 'null',
+
+  // Regex literals: ~/pattern/flags
+  regex: ($) => seq(
+    '~/',
+    repeat(choice(
+      $.regex_escape_sequence,
+      /[^\/\\\n]/
+    )),
+    '/',
+    optional($.regex_flags)
+  ),
+
+  regex_escape_sequence: ($) => seq('\\', /./),
+  regex_flags: ($) => /[gimsu]+/,
 
   // https://haxe.org/manual/expression-array-declaration.html
   array: ($) =>

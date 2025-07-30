@@ -48,6 +48,16 @@
 ; [(keyword) (null)] @keyword
 ; (type) @type
 (type_name) @type
+
+; Regex literals
+(regex) @string.regexp
+(regex_flags) @keyword.other
+(regex_escape_sequence) @constant.character.escape
+
+; Arrow functions
+(arrow_function "->" @operator.arrow)
+(arrow_function_parameter name: (identifier) @variable.parameter)
+(arrow_function_parameter type: (type) @type)
 (package_name) @module
 (type (identifier) !built_in) @type
 (type built_in: (identifier)) @type.builtin

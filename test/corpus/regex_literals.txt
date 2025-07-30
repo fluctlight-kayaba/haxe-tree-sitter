@@ -1,0 +1,137 @@
+===================
+simple regex
+===================
+
+class Main {
+  var pattern = ~/test/;
+}
+
+---
+
+(module
+  (class_declaration (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator) 
+        (regex)
+      )
+    )
+  )
+)
+
+===================
+regex with flags
+===================
+
+class Main {
+  var pattern = ~/pattern/g;
+}
+
+---
+
+(module
+  (class_declaration (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (regex (regex_flags))
+      )
+    )
+  )
+)
+
+===================
+regex with all flags
+===================
+
+class Main {
+  var pattern = ~/pattern/gimsu;
+}
+
+---
+
+(module
+  (class_declaration (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (regex (regex_flags))
+      )
+    )
+  )
+)
+
+===================
+regex with escape sequences
+===================
+
+class Main {
+  var pattern = ~/^[1-9]\d{0,2}$/g;
+}
+
+---
+
+(module
+  (class_declaration (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (regex (regex_escape_sequence) (regex_flags))
+      )
+    )
+  )
+)
+
+===================
+complex regex
+===================
+
+class Main {
+  var pattern = ~/^@(param|default|exception|throws|deprecated|return|returns|since|see)\s+([^@]+)/gm;
+}
+
+---
+
+(module
+  (class_declaration (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (regex (regex_escape_sequence) (regex_flags))
+      )
+    )
+  )
+)
+
+===================
+regex in function call
+===================
+
+class Main {
+  function test() {
+    trace(~/^\d+$/i);
+  }
+}
+
+---
+
+(module
+  (class_declaration (identifier)
+    (block
+      (function_declaration
+        (identifier)
+        (block
+          (call_expression
+            (identifier)
+            (regex (regex_escape_sequence) (regex_flags))
+          )
+        )
+      )
+    )
+  )
+)

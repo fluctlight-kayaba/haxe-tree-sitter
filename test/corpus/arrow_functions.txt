@@ -1,0 +1,183 @@
+===================
+simple arrow function no params
+===================
+
+class Main {
+  var f = () -> 1;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function (integer))
+      )
+    )
+  )
+)
+
+===================
+arrow function single param
+===================
+
+class Main {
+  var f = (a) -> a;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function
+          (arrow_function_parameter (identifier))
+          (identifier)
+        )
+      )
+    )
+  )
+)
+
+===================
+arrow function with typed param
+===================
+
+class Main {
+  var f = (a:Int) -> a;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function
+          (arrow_function_parameter (identifier) (type (identifier)))
+          (identifier)
+        )
+      )
+    )
+  )
+)
+
+===================
+arrow function with optional param
+===================
+
+class Main {
+  var f = (?a:Int) -> a;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function
+          (arrow_function_parameter (identifier) (type (identifier)))
+          (identifier)
+        )
+      )
+    )
+  )
+)
+
+===================
+arrow function with default param
+===================
+
+class Main {
+  var f = (a:Int=1) -> a;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function
+          (arrow_function_parameter (identifier) (type (identifier)) (integer))
+          (identifier)
+        )
+      )
+    )
+  )
+)
+
+===================
+arrow function multiple params
+===================
+
+class Main {
+  var f = (a:Int, b:String) -> a + b.length;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function
+          (arrow_function_parameter (identifier) (type (identifier)))
+          (arrow_function_parameter (identifier) (type (identifier)))
+          (identifier)
+          (operator)
+          (member_expression (identifier) (identifier))
+        )
+      )
+    )
+  )
+)
+
+===================
+arrow function without parens
+===================
+
+class Main {
+  var f = a -> a + 1;
+}
+
+---
+
+(module
+  (class_declaration 
+    (identifier)
+    (block
+      (variable_declaration
+        (identifier)
+        (operator)
+        (arrow_function
+          (arrow_function_parameter (identifier))
+          (identifier)
+          (operator)
+          (integer)
+        )
+      )
+    )
+  )
+)
