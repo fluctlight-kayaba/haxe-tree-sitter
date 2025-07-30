@@ -34,6 +34,9 @@ module.exports = grammar({
     [$.arrow_function_parameter, $.structure_type_pair],
     [$.arrow_function_parameter, $._function_type_args, $.structure_type_pair],
     [$.arrow_function_parameter, $._function_type_args],
+    [$.object, $.block],
+    [$.pair, $.structure_type_pair],
+    [$._lhs_expression, $.pair],
   ],
   rules: {
     module: ($) => seq(repeat($.statement)),
@@ -178,7 +181,7 @@ module.exports = grammar({
       ),
 
     expression: ($) =>
-      choice(
+      prec.right(choice(
         $._unaryExpression,
         $.subscript_expression,
         $.runtime_type_check_expression,
@@ -194,7 +197,7 @@ module.exports = grammar({
         seq('untyped', $._rhs_expression),
         'break',
         'continue',
-      ),
+      )),
 
     subscript_expression: ($) =>
       prec.left(
@@ -257,7 +260,7 @@ module.exports = grammar({
       ),
 
     // arg list is () with any amount of expressions followed by commas
-    _arg_list: ($) => seq('(', commaSep($.expression), ')'),
+    _arg_list: ($) => prec.right(seq('(', commaSep($.expression), ')')),
 
     conditional_statement: ($) =>
       prec.right(

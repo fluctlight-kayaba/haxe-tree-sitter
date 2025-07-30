@@ -45,18 +45,18 @@ module.exports = {
   // https://haxe.org/manual/expression-map-declaration.html
   map: ($) => prec(1, seq('[', commaSep1($.pair), ']')),
 
-  // https://haxe.org/manual/expression-object-declaration.html
-  object: ($) => prec(1, seq('{', commaSep($.pair), $._closing_brace)),
+  // https://haxe.org/manual/expression-object-declaration.html  
+  object: ($) => prec.right(1, seq('{', commaSep($.pair), optional(','), $._closing_brace)),
 
   structure_type: ($) => prec(1, seq('{', commaSep(alias($.structure_type_pair, $.pair)), $._closing_brace)),
   structure_type_pair: ($) => prec.left(seq(choice($.identifier), ':', $.type)),
 
   // Sub part of map and object literals
   pair: ($) =>
-    prec.right(
+    prec.right(1,
       choice(
-        seq(choice($.identifier, $.string), ':', $.expression),
-        seq(choice($.identifier, $._literal), '=>', $.expression),
+        seq(choice($.identifier, $.string), ':', choice($.expression, $._literal)),
+        seq(choice($.identifier, $._literal), '=>', choice($.expression, $._literal)),
       ),
     ),
 
